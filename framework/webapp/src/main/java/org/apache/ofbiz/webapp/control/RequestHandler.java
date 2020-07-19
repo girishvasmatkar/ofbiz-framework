@@ -573,9 +573,9 @@ public class RequestHandler {
             if (UtilValidate.isNotEmpty(preRequestMap)) {
                 for (Map.Entry<String, Object> entry: preRequestMap.entrySet()) {
                     String key = entry.getKey();
-                    if ("_ERROR_MESSAGE_LIST_".equals(key) || "_ERROR_MESSAGE_MAP_".equals(key) || "_ERROR_MESSAGE_".equals(key) ||
-                            "_WARNING_MESSAGE_LIST_".equals(key) || "_WARNING_MESSAGE_".equals(key) ||
-                            "_EVENT_MESSAGE_LIST_".equals(key) || "_EVENT_MESSAGE_".equals(key)) {
+                    if ("_ERROR_MESSAGE_LIST_".equals(key) || "_ERROR_MESSAGE_MAP_".equals(key) || "_ERROR_MESSAGE_".equals(key)
+                            || "_WARNING_MESSAGE_LIST_".equals(key) || "_WARNING_MESSAGE_".equals(key)
+                            || "_EVENT_MESSAGE_LIST_".equals(key) || "_EVENT_MESSAGE_".equals(key)) {
                         request.setAttribute(key, entry.getValue());
                    }
                 }
@@ -796,8 +796,9 @@ public class RequestHandler {
         return eventReturn;
     }
 
-    /** Returns the default error page for this request. */
-    public String getDefaultErrorPage(HttpServletRequest request) {
+    /** Returns the default error page for this request. 
+     * @throws MalformedURLException */
+    public String getDefaultErrorPage(HttpServletRequest request) throws MalformedURLException {
         URL errorPage = null;
         try {
             String errorPageLocation = getControllerConfig().getErrorpage();
@@ -806,7 +807,7 @@ public class RequestHandler {
             Debug.logError(e, "Exception thrown while parsing controller.xml file: ", MODULE);
         }
         if (errorPage == null) {
-            return "/error/error.jsp";
+            return FlexibleLocation.resolveLocation("component://common/webcommon/error/Error.ftl").toString();
         }
         return errorPage.toString();
     }
@@ -1044,8 +1045,8 @@ public class RequestHandler {
      * @return return the query string
      */
     public String makeQueryString(HttpServletRequest request, ConfigXMLReader.RequestResponse requestResponse) {
-        if (requestResponse == null ||
-                (requestResponse.redirectParameterMap.size() == 0 && requestResponse.redirectParameterValueMap.size() == 0)) {
+        if (requestResponse == null
+                || (requestResponse.redirectParameterMap.size() == 0 && requestResponse.redirectParameterValueMap.size() == 0)) {
             Map<String, Object> urlParams = UtilHttp.getUrlOnlyParameterMap(request);
             String queryString = UtilHttp.urlEncodeArgs(urlParams, false);
             if (UtilValidate.isEmpty(queryString)) {
