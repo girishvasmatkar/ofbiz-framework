@@ -465,44 +465,11 @@ public class ModelServiceReader implements Serializable {
     private static void createAttrDefs(Element baseElement, ModelService service) {
         // Add in the defined attributes (override the above defaults if specified)
         for (Element attribute: UtilXml.childElementList(baseElement, "attribute")) {
-            ModelParam param = new ModelParam();
-
-            param.name = UtilXml.checkEmpty(attribute.getAttribute("name")).intern();
-            param.description = getCDATADef(attribute, "description");
-            param.type = UtilXml.checkEmpty(attribute.getAttribute("type")).intern();
-            param.mode = UtilXml.checkEmpty(attribute.getAttribute("mode")).intern();
-            param.entityName = UtilXml.checkEmpty(attribute.getAttribute("entity-name")).intern();
-            param.fieldName = UtilXml.checkEmpty(attribute.getAttribute("field-name")).intern();
-            param.requestAttributeName = UtilXml.checkEmpty(attribute.getAttribute("request-attribute-name")).intern();
-            param.sessionAttributeName = UtilXml.checkEmpty(attribute.getAttribute("session-attribute-name")).intern();
-            param.stringMapPrefix = UtilXml.checkEmpty(attribute.getAttribute("string-map-prefix")).intern();
-            param.stringListSuffix = UtilXml.checkEmpty(attribute.getAttribute("string-list-suffix")).intern();
-            param.formLabel = attribute.hasAttribute("form-label")?attribute.getAttribute("form-label").intern():null;
-            param.optional = "true".equalsIgnoreCase(attribute.getAttribute("optional")); // default to true
-            param.formDisplay = !"false".equalsIgnoreCase(attribute.getAttribute("form-display")); // default to false
-            param.allowHtml = UtilXml.checkEmpty(attribute.getAttribute("allow-html"), "none").intern(); // default to none
-
-            // default value
-            String defValue = attribute.getAttribute("default-value");
-            if (UtilValidate.isNotEmpty(defValue)) {
-                if (Debug.verboseOn()) {
-                    Debug.logVerbose("Got a default-value [" + defValue + "] for service attribute [" + service.name + "." + param.name + "]", MODULE);
-                }
-                param.setDefaultValue(defValue.intern());
-            }
-
-            // set the entity name to the default if not specified
+            ModelParam param = createModelParam(attribute, null, service);
+         // set the entity name to the default if not specified
             if (param.entityName.length() == 0) {
                 param.entityName = service.defaultEntityName;
             }
-
-            // set the field-name to the name if entity name is specified but no field-name
-            if (param.fieldName.length() == 0 && param.entityName.length() > 0) {
-                param.fieldName = param.name;
-            }
-
-            // set the validators
-            addValidators(attribute, param);
             service.addParam(param);
         }
 
@@ -598,7 +565,52 @@ public class ModelServiceReader implements Serializable {
         def.internal = true;
         service.addParam(def);
     }
+    
+    
+    private static ModelParam createModelParam(Element attribute, ModelParam parentParam, ModelService service) {
+        ModelParam param = new ModelParam();
+        boolean isNestedChild = parentParam != null;
+        param.name = UtilXml.checkEmpty(attribute.getAttribute("name")).intern();
+        param.description = getCDATADef(attribute, "description");
+        param.type = UtilXml.checkEmpty(attribute.getAttribute("type")).intern();
+        param.mode = isNestedChild ? parentParam.mode : UtilXml.checkEmpty(attribute.getAttribute("mode")).intern();
+        param.entityName = UtilXml.checkEmpty(attribute.getAttribute("entity-name")).intern();
+        param.fieldName = UtilXml.checkEmpty(attribute.getAttribute("field-name")).intern();
+        param.requestAttributeName = UtilXml.checkEmpty(attribute.getAttribute("request-attribute-name")).intern();
+        param.sessionAttributeName = UtilXml.checkEmpty(attribute.getAttribute("session-attribute-name")).intern();
+        param.stringMapPrefix = UtilXml.checkEmpty(attribute.getAttribute("string-map-prefix")).intern();
+        param.stringListSuffix = UtilXml.checkEmpty(attribute.getAttribute("string-list-suffix")).intern();
+        param.formLabel = attribute.hasAttribute("form-label")?attribute.getAttribute("form-label").intern():null;
+        param.optional = "true".equalsIgnoreCase(attribute.getAttribute("optional")); // default to true
+        param.formDisplay = !"false".equalsIgnoreCase(attribute.getAttribute("form-display")); // default to false
+        param.allowHtml = UtilXml.checkEmpty(attribute.getAttribute("allow-html"), "none").intern(); // default to none
 
+        // default value
+        String defValue = attribute.getAttribute("default-value");
+        if (UtilValidate.isNotEmpty(defValue)) {
+            if (Debug.verboseOn()) {
+                Debug.logVerbose("Got a default-value [" + defValue + "] for service attribute [" + service.name + "." + param.name + "]", MODULE);
+            }
+            param.setDefaultValue(defValue.intern());
+        }
+        
+        // set the field-name to the name if entity name is specified but no field-name
+        if (param.fieldName.length() == 0 && param.entityName.length() > 0) {
+            param.fieldName = param.name;
+        }
+
+        // set the validators
+        addValidators(attribute, param);
+        for (Element child: UtilXml.childElementList(attribute, "attribute")) {
+            String childName  = UtilXml.checkEmpty(child.getAttribute("name")).intern();
+            String childType  = UtilXml.checkEmpty(child.getAttribute("type")).intern();
+            ModelParam childParam = createModelParam(child, param, service);
+            param.getChildList().add(childParam);
+        }
+        return param;
+    }
+    
+    
     private static void createOverrideDefs(Element baseElement, ModelService service) {
         for (Element overrideElement: UtilXml.childElementList(baseElement, "override")) {
             String name = UtilXml.checkEmpty(overrideElement.getAttribute("name"));

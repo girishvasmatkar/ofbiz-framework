@@ -19,6 +19,7 @@
 package org.apache.ofbiz.service;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -94,7 +95,20 @@ public class ModelParam implements Serializable {
 
     /** Is this Parameter set internally? */
     public boolean internal = false;
+    
+    
+    private ArrayList<ModelParam> childList = null;
 
+    /**
+     * @return the childList
+     */
+    public ArrayList<ModelParam> getChildList() {
+        if (childList == null) {
+            childList = new ArrayList<>();
+        }
+        return childList;
+    }
+    
     public ModelParam() { }
 
     public ModelParam(ModelParam param) {
